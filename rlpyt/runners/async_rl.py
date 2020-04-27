@@ -91,8 +91,11 @@ class AsyncRlBase(BaseRunner):
             while self.ctrl.sampler_itr.value < 1:  # Sampler does eval first.
                 time.sleep(THROTTLE_WAIT)
             traj_infos = drain_queue(self.traj_infos_queue, n_sentinel=1)
+            print('eval done, storing diagnostics')
             self.store_diagnostics(0, 0, traj_infos, ())
+            print('stored diagnostics, logging')
             self.log_diagnostics(0, 0, 0)
+            print('Logging finished, starting training')
         log_counter = 0
         while True:  # Run until sampler hits n_steps and sets ctrl.quit=True.
             logger.set_iteration(itr)
