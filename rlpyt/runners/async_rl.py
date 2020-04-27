@@ -123,6 +123,7 @@ class AsyncRlBase(BaseRunner):
                     log_counter += 1
                     throttle_time = 0.
             itr += 1
+            self.ctrl.opt_itr.value = itr
         # Final log:
         sampler_itr = self.ctrl.sampler_itr.value
         traj_infos = drain_queue(self.traj_infos_queue)
@@ -215,6 +216,7 @@ class AsyncRlBase(BaseRunner):
             sample_ready=[mp.Semaphore(0) for _ in range(2)],  # Double buffer.
             sample_copied=[mp.Semaphore(1) for _ in range(2)],
             sampler_itr=mp.Value('l', lock=True),
+            opt_itr=mp.Value('l', lock=True),
             opt_throttle=opt_throttle,
             eval_time=mp.Value('d', lock=True),
         )
@@ -279,6 +281,9 @@ class AsyncRlBase(BaseRunner):
             ctrl=self.ctrl,
             traj_infos_queue=self.traj_infos_queue,
             n_itr=n_itr,
+            delta_throttle_itr=(self.sampler_batch_size * self.algo.replay_ratio) /
+                               (self.algo.batch_size * self.world_size *
+                                self.algo.updates_per_optimize)  # (is updates_per_sync)
         )
         if self._eval:
             target = run_async_sampler_eval
@@ -512,7 +517,7 @@ class AsyncOptWorker:
         logger.log(f"Async optimization worker {self.rank} shutting down.")
 
 
-def run_async_sampler(sampler, affinity, ctrl, traj_infos_queue, n_itr):
+def run_async_sampler(sampler, affinity, ctrl, traj_infos_queue, n_itr, delta_throttle_itr):
     """
     Target function for the process which will run the sampler, in the case of
     online performance logging.  Toggles the sampler's double-buffer for each
@@ -522,7 +527,11 @@ def run_async_sampler(sampler, affinity, ctrl, traj_infos_queue, n_itr):
     """
     sampler.initialize(affinity)
     db_idx = 0
+    throttle_itr = 0
     for itr in range(n_itr):
+        while ctrl.opt_itr.value < throttle_itr:
+            time.sleep(THROTTLE_WAIT)
+        throttle_itr += delta_throttle_itr
         ctrl.sample_copied[db_idx].acquire()
         traj_infos = sampler.obtain_samples(itr, db_idx)
         ctrl.sample_ready[db_idx].release()
