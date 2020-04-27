@@ -289,7 +289,7 @@ class AsyncRlBase(BaseRunner):
             kwargs['delta_throttle_itr'] = (self.sampler_batch_size * self.algo.replay_ratio) / \
                                            (self.algo.batch_size * self.world_size *
                                             self.algo.updates_per_optimize)  # (is updates_per_sync)
-            print(kwargs['delta_throttle_itr'])
+            print('delta_throttle_itr: ', kwargs['delta_throttle_itr'])
         self.sampler_proc = mp.Process(target=target, kwargs=kwargs)
         self.sampler_proc.start()
 
@@ -531,6 +531,7 @@ def run_async_sampler(sampler, affinity, ctrl, traj_infos_queue, n_itr, delta_th
     db_idx = 0
     throttle_itr = 0
     for itr in range(n_itr):
+        print('Sampler itr: {}, Throttle_itr: {}', itr, throttle_itr)
         while ctrl.opt_itr.value < throttle_itr:
             time.sleep(THROTTLE_WAIT)
         throttle_itr += delta_throttle_itr
