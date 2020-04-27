@@ -92,11 +92,8 @@ class AsyncRlBase(BaseRunner):
             while self.ctrl.sampler_itr.value < 1:  # Sampler does eval first.
                 time.sleep(THROTTLE_WAIT)
             traj_infos = drain_queue(self.traj_infos_queue, n_sentinel=1)
-            print('eval done, storing diagnostics')
             self.store_diagnostics(0, 0, traj_infos, ())
-            print('stored diagnostics, logging')
             self.log_diagnostics(0, 0, 0)
-            print('Logging finished, starting training')
         log_counter = 0
         while True:  # Run until sampler hits n_steps and sets ctrl.quit=True.
             logger.set_iteration(itr)
@@ -292,9 +289,7 @@ class AsyncRlBase(BaseRunner):
         kwargs['delta_throttle_itr'] = (self.sampler_batch_size * self.algo.replay_ratio) / \
                                        (self.algo.batch_size * self.world_size *
                                         self.algo.updates_per_optimize)  # (is updates_per_sync)
-        print(self.sampler_batch_size, self.algo.replay_ratio, self.algo.batch_size, self.world_size, self.algo.updates_per_optimize)
         kwargs['min_itr'] = 1 + getattr(self.algo, "min_steps_learn", 0) // self.sampler_batch_size
-        print('delta_throttle_itr: ', kwargs['delta_throttle_itr'])
         self.sampler_proc = mp.Process(target=target, kwargs=kwargs)
         self.sampler_proc.start()
 
@@ -535,9 +530,7 @@ def run_async_sampler(sampler, affinity, ctrl, traj_infos_queue, n_itr, delta_th
     sampler.initialize(affinity)
     db_idx = 0
     throttle_itr = 0
-    print('Running sampler')
     for itr in range(n_itr):
-        print('Sampler itr: {}, Throttle_itr: {}', itr, throttle_itr, flush=True)
         while ctrl.opt_itr.value < throttle_itr:
             time.sleep(THROTTLE_WAIT)
         throttle_itr += delta_throttle_itr
