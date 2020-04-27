@@ -285,11 +285,10 @@ class AsyncRlBase(BaseRunner):
         if self._eval:
             target = run_async_sampler_eval
             kwargs["eval_itrs"] = self.log_interval_itrs
-        else:
-            kwargs['delta_throttle_itr'] = (self.sampler_batch_size * self.algo.replay_ratio) / \
-                                           (self.algo.batch_size * self.world_size *
-                                            self.algo.updates_per_optimize)  # (is updates_per_sync)
-            print('delta_throttle_itr: ', kwargs['delta_throttle_itr'])
+        kwargs['delta_throttle_itr'] = (self.sampler_batch_size * self.algo.replay_ratio) / \
+                                       (self.algo.batch_size * self.world_size *
+                                        self.algo.updates_per_optimize)  # (is updates_per_sync)
+        print('delta_throttle_itr: ', kwargs['delta_throttle_itr'])
         self.sampler_proc = mp.Process(target=target, kwargs=kwargs)
         self.sampler_proc.start()
 
@@ -530,8 +529,9 @@ def run_async_sampler(sampler, affinity, ctrl, traj_infos_queue, n_itr, delta_th
     sampler.initialize(affinity)
     db_idx = 0
     throttle_itr = 0
+    print('Running sampler')
     for itr in range(n_itr):
-        print('Sampler itr: {}, Throttle_itr: {}', itr, throttle_itr)
+        print('Sampler itr: {}, Throttle_itr: {}', itr, throttle_itr, flush=True)
         while ctrl.opt_itr.value < throttle_itr:
             time.sleep(THROTTLE_WAIT)
         throttle_itr += delta_throttle_itr
@@ -551,13 +551,19 @@ def run_async_sampler(sampler, affinity, ctrl, traj_infos_queue, n_itr, delta_th
 
 
 def run_async_sampler_eval(sampler, affinity, ctrl, traj_infos_queue,
-        n_itr, eval_itrs):
+        n_itr, eval_itrs, delta_throttle_itr):
     """
     Target function running the sampler with offline performance evaluation.
     """
     sampler.initialize(affinity)
     db_idx = 0
+    throttle_itr = 0
+    print('Running sampler')
     for itr in range(n_itr + 1):  # +1 to get last eval :)
+        print('Sampler itr: {}, Throttle_itr: {}', itr, throttle_itr)
+        while ctrl.opt_itr.value < throttle_itr:
+            time.sleep(THROTTLE_WAIT)
+        throttle_itr += delta_throttle_itr
         ctrl.sample_copied[db_idx].acquire()
         # assert not ctrl.sample_copied[db_idx].acquire(block=False)  # Debug check.
         sampler.obtain_samples(itr, db_idx)
