@@ -457,7 +457,10 @@ def record_tabular_misc_stat(key, values, placement='back'):
     if len(values) > 0:
         if isinstance(values, torch.Tensor):
             values = values.cpu().numpy()
-        record_tabular(prefix + "Average" + suffix, np.average(values))
+        try:
+            record_tabular(prefix + "Average" + suffix, np.average(values))
+        except:
+            print(values)
         record_tabular(prefix + "Std" + suffix, np.std(values))
         record_tabular(prefix + "Median" + suffix, np.median(values))
         record_tabular(prefix + "Min" + suffix, np.min(values))
