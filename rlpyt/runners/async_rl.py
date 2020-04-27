@@ -103,7 +103,7 @@ class AsyncRlBase(BaseRunner):
                 while self.ctrl.sampler_itr.value < throttle_itr:
                     if self.ctrl.quit.value:
                         break
-                    print('Opt waiting. Sampler itr: {}, Opt itr: {}, Throttle itr: {}',self.ctrl.sampler_itr.value, itr, throttle_itr)
+                    print('Opt waiting. Sampler itr: {}, Opt itr: {}, Throttle itr: {}'.format(self.ctrl.sampler_itr.value, itr, throttle_itr))
                     time.sleep(THROTTLE_WAIT)
                     throttle_time += THROTTLE_WAIT
                 if self.ctrl.quit.value:
@@ -567,7 +567,7 @@ def run_async_sampler_eval(sampler, affinity, ctrl, traj_infos_queue,
     for itr in range(n_itr + 1):  # +1 to get last eval :)
         print('Sampler itr: {}, Throttle_itr: {}', itr, throttle_itr)
         while (ctrl.opt_itr.value) < throttle_itr and (itr > min_itr):
-            print('Sampler waiting. Sampler itr: {}, Opt itr: {}, Throttle itr: {}', itr, ctrl.opt_itr.value, throttle_itr)
+            print('Sampler waiting. Sampler itr: {}, Opt itr: {}, Throttle itr: {}'.format(itr, ctrl.opt_itr.value, throttle_itr))
             time.sleep(THROTTLE_WAIT)
         throttle_itr += delta_throttle_itr
         ctrl.sample_copied[db_idx].acquire()
