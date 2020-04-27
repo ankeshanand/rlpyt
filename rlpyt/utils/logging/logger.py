@@ -1,5 +1,6 @@
 from enum import Enum
 
+from rlpyt.utils.buffer import numpify_buffer
 from rlpyt.utils.logging.tabulate import tabulate
 from rlpyt.utils.logging.console import mkdir_p, colorize
 from rlpyt.utils.logging.autoargs import get_all_parameters
@@ -454,6 +455,7 @@ def record_tabular_misc_stat(key, values, placement='back'):
         if _tf_summary_writer is not None:
             prefix += "/"  # Group stats together in Tensorboard.
     if len(values) > 0:
+        values = numpify_buffer(values)
         record_tabular(prefix + "Average" + suffix, np.average(values))
         record_tabular(prefix + "Std" + suffix, np.std(values))
         record_tabular(prefix + "Median" + suffix, np.median(values))
