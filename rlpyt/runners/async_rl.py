@@ -84,9 +84,10 @@ class AsyncRlBase(BaseRunner):
         at an interval in the number of sampler iterations, not optimizer
         iterations.
         """
-        throttle_itr, delta_throttle_itr = self.startup()
+        min_itr, delta_throttle_itr = self.startup()
         throttle_time = 0.
         sampler_itr = itr = 0
+        throttle_itr = 0
         if self._eval:
             while self.ctrl.sampler_itr.value < 1:  # Sampler does eval first.
                 time.sleep(THROTTLE_WAIT)
@@ -100,7 +101,7 @@ class AsyncRlBase(BaseRunner):
         while True:  # Run until sampler hits n_steps and sets ctrl.quit=True.
             logger.set_iteration(itr)
             with logger.prefix(f"opt_itr #{itr} "):
-                while self.ctrl.sampler_itr.value < throttle_itr:
+                while self.ctrl.sampler_itr.value < throttle_itr or self.ctrl.sampler_itr.value < min_itr:
                     if self.ctrl.quit.value:
                         break
                     print('Opt waiting. Sampler itr: {}, Opt itr: {}, Throttle itr: {}'.format(self.ctrl.sampler_itr.value, itr, throttle_itr))
