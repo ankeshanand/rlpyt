@@ -292,6 +292,7 @@ class AsyncRlBase(BaseRunner):
         kwargs['delta_throttle_itr'] = (self.sampler_batch_size * self.algo.replay_ratio) / \
                                        (self.algo.batch_size * self.world_size *
                                         self.algo.updates_per_optimize)  # (is updates_per_sync)
+        print(self.sampler_batch_size, self.algo.replay_ratio, self.algo.batch_size, self.world_size, self.algo.updates_per_optimize)
         kwargs['min_itr'] = 1 + getattr(self.algo, "min_steps_learn", 0) // self.sampler_batch_size
         print('delta_throttle_itr: ', kwargs['delta_throttle_itr'])
         self.sampler_proc = mp.Process(target=target, kwargs=kwargs)
