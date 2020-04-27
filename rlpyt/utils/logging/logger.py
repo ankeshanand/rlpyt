@@ -460,6 +460,7 @@ def record_tabular_misc_stat(key, values, placement='back'):
         try:
             record_tabular(prefix + "Average" + suffix, np.average(values))
         except:
+            print(prefix)
             print(values)
         record_tabular(prefix + "Std" + suffix, np.std(values))
         record_tabular(prefix + "Median" + suffix, np.median(values))
