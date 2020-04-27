@@ -281,13 +281,15 @@ class AsyncRlBase(BaseRunner):
             ctrl=self.ctrl,
             traj_infos_queue=self.traj_infos_queue,
             n_itr=n_itr,
-            delta_throttle_itr=(self.sampler_batch_size * self.algo.replay_ratio) /
-                               (self.algo.batch_size * self.world_size *
-                                self.algo.updates_per_optimize)  # (is updates_per_sync)
         )
         if self._eval:
             target = run_async_sampler_eval
             kwargs["eval_itrs"] = self.log_interval_itrs
+        else:
+            kwargs['delta_throttle_itr'] = (self.sampler_batch_size * self.algo.replay_ratio) / \
+                                           (self.algo.batch_size * self.world_size *
+                                            self.algo.updates_per_optimize)  # (is updates_per_sync)
+            print(kwargs['delta_throttle_itr'])
         self.sampler_proc = mp.Process(target=target, kwargs=kwargs)
         self.sampler_proc.start()
 
