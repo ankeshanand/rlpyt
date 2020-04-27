@@ -291,6 +291,7 @@ class AsyncRlBase(BaseRunner):
         kwargs['delta_throttle_itr'] = (self.sampler_batch_size * self.algo.replay_ratio) / \
                                        (self.algo.batch_size * self.world_size *
                                         self.algo.updates_per_optimize)  # (is updates_per_sync)
+        kwargs['min_itr'] = 1 + getattr(self.algo, "min_steps_learn", 0) // self.sampler_batch_size
         print('delta_throttle_itr: ', kwargs['delta_throttle_itr'])
         self.sampler_proc = mp.Process(target=target, kwargs=kwargs)
         self.sampler_proc.start()
@@ -554,7 +555,7 @@ def run_async_sampler(sampler, affinity, ctrl, traj_infos_queue, n_itr, delta_th
 
 
 def run_async_sampler_eval(sampler, affinity, ctrl, traj_infos_queue,
-        n_itr, eval_itrs, delta_throttle_itr):
+        n_itr, eval_itrs, delta_throttle_itr, min_itr):
     """
     Target function running the sampler with offline performance evaluation.
     """
@@ -564,7 +565,7 @@ def run_async_sampler_eval(sampler, affinity, ctrl, traj_infos_queue,
     print('Running sampler')
     for itr in range(n_itr + 1):  # +1 to get last eval :)
         print('Sampler itr: {}, Throttle_itr: {}', itr, throttle_itr)
-        while ctrl.opt_itr.value < throttle_itr:
+        while (ctrl.opt_itr.value) < throttle_itr and (itr > min_itr):
             time.sleep(THROTTLE_WAIT)
         throttle_itr += delta_throttle_itr
         ctrl.sample_copied[db_idx].acquire()
@@ -581,6 +582,7 @@ def run_async_sampler_eval(sampler, affinity, ctrl, traj_infos_queue,
                     traj_infos_queue.put(traj_info)
                 traj_infos_queue.put(None)  # Master will get until None sentinel.
                 ctrl.sampler_itr.value = itr
+            print('Eval done')
         else:
             ctrl.sampler_itr.value = itr
         db_idx ^= 1  # Double buffer
