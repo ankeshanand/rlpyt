@@ -571,7 +571,8 @@ def run_async_sampler_eval(sampler, affinity, ctrl, traj_infos_queue,
         while (ctrl.opt_itr.value) < throttle_itr and (itr > min_itr):
             print('Sampler waiting. Sampler itr: {}, Opt itr: {}, Throttle itr: {}'.format(itr, ctrl.opt_itr.value, throttle_itr))
             time.sleep(THROTTLE_WAIT)
-        throttle_itr += delta_throttle_itr
+        if itr > min_itr:
+            throttle_itr += delta_throttle_itr
         ctrl.sample_copied[db_idx].acquire()
         # assert not ctrl.sample_copied[db_idx].acquire(block=False)  # Debug check.
         sampler.obtain_samples(itr, db_idx)
