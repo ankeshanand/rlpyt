@@ -109,7 +109,7 @@ class AtariEnv(Env):
         self._life_reset()
         for _ in range(np.random.randint(0, self._max_start_noops + 1)):
             self.ale.act(0)
-        if self.fire_on_reset:
+        if self._fire_on_reset:
             self.fire_and_up()
         self._update_obs()  # (don't bother to populate any frame history)
         self._step_counter = 0
