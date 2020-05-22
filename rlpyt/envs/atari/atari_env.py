@@ -70,7 +70,7 @@ class AtariEnv(Env):
                  num_img_obs=4,  # Number of (past) frames in observation (>=1).
                  clip_reward=True,
                  episodic_lives=True,
-                 fire_on_reset=True,
+                 fire_on_reset=False,
                  max_start_noops=30,
                  repeat_action_probability=0.,
                  horizon=27000,
